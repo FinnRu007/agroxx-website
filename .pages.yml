@@ -75,10 +75,9 @@ content:
         type: string
         description: "z. B. „4,0 m“ (wird in der Grubber-Preistabelle angezeigt)."
       - name: eckdaten
-        label: Eckdaten
+        label: Eckdaten (Stichpunkte auf der Karte, z. B. „Dachringwalze Ø 600 mm“)
         type: string
         list: true
-        description: "Eine Zeile pro Eigenschaft, z. B. „Dachringwalze Ø 600 mm“. Erscheinen als Stichpunkte auf der Karte."
       - name: bilder
         label: Fotos
         type: image
@@ -86,7 +85,7 @@ content:
           media: bilder
           multiple: true
           unique: true
-        description: "Das erste Foto ist das Titelbild. Mit dem Ziehen-Symbol lässt sich die Reihenfolge ändern. Mit „Alle Fotos hochladen“ können mehrere auf einmal gewählt werden."
+        description: "Das erste Foto ist das Titelbild. „Upload“ lädt neue Fotos vom Gerät hoch, „Select“ wählt bereits hochgeladene. Reihenfolge ändern: ein Foto mit der Maus an eine andere Stelle ziehen."
       - name: inserat
         label: Inserat-Nr. (traktorpool)
         type: string
@@ -94,7 +93,7 @@ content:
       - name: startseite
         label: Auf der Startseite zeigen
         type: boolean
-        description: "Ein Haken = die Maschine erscheint unter „Aktuell ab Lager“ auf der Startseite (am besten höchstens 6)."
+        description: "Schalter an = die Maschine erscheint unter „Aktuell ab Lager“ auf der Startseite (am besten höchstens 6)."
 
   - name: firma
     label: Firma & Kontakt
@@ -163,10 +162,9 @@ content:
     format: json
     fields:
       - name: sonderausruestung
-        label: Sonderausrüstung gegen Mehrpreis
+        label: Sonderausrüstung gegen Mehrpreis (Preisliste auf der Grubber-Seite)
         type: object
         list: true
-        description: "Erscheint als Preisliste auf der Grubber-Seite."
         fields:
           - name: bezeichnung
             label: Bezeichnung

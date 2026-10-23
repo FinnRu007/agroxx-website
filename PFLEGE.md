@@ -5,66 +5,71 @@ Alles, was sich ändert – Preise, Maschinen, Fotos, Kontaktdaten –, erledigs
 **Formular öffnen:** https://app.pagescms.org
 Dort meldest du dich an (Einladung kommt per E-Mail, siehe unten) und wählst das Projekt **agroxx-website**.
 
-Links im Menü findest du drei Bereiche:
+> Die Knöpfe von Pages CMS sind auf Englisch (z. B. **Save**, **Add an entry**, **Upload**). Die Felder und Hilfetexte der Seite selbst sind auf Deutsch.
+
+Links im Menü findest du:
 
 | Bereich | Wofür |
 |---|---|
 | **Maschinen** | Alle Maschinen mit Preis, Status, Eckdaten und Fotos |
-| **Firma & Kontakt** | Telefon, E-Mail, Öffnungszeiten, Impressum-Angaben, „Über uns“, „Live“-Schalter |
+| **Firma & Kontakt** | Telefon, E-Mail, Öffnungszeiten, Impressum-Angaben, „Über uns“, Schalter Entwurf/Live |
 | **Grubber-Seite** | Preisliste der Sonderausrüstung |
+| **Fotos** (unter „Media“) | Alle hochgeladenen Fotos |
 
-## Nach jedem Speichern
-Auf „Speichern“ klicken – fertig. Die Seite baut sich selbst neu auf und ist nach **etwa 1–2 Minuten** aktualisiert (Seite im Browser neu laden, bei Bedarf mit Strg + F5).
+## Nach jeder Änderung
+Oben rechts auf **Save** klicken – fertig. Die Seite baut sich selbst neu auf und ist nach **etwa 1–2 Minuten** aktualisiert (im Browser neu laden, bei Bedarf mit Strg + F5).
 
 ## Preis ändern
-1. **Maschinen** öffnen, Maschine anklicken (oben gibt es ein Suchfeld).
+1. **Maschinen** öffnen, in der Liste auf **Edit** neben der Maschine klicken (oben gibt es ein Suchfeld).
 2. Feld **Preis netto in Euro** ändern, z. B. `9900` (ohne Punkt, ohne €).
-3. Speichern.
+3. **Save**.
 
 Preis leer lassen → auf der Seite steht „Preis auf Anfrage“.
 
 ## Maschine als verkauft oder reserviert markieren
-- **Reserviert:** Feld **Status** auf „Reserviert“ stellen. Die Maschine bleibt sichtbar, bekommt eine orange Marke „Reserviert“.
-- **Verkauft:** Feld **Status** auf „Verkauft“ stellen. Die Maschine verschwindet von der Seite. Die Daten bleiben gespeichert – falls der Verkauf platzt, einfach wieder auf „Verfügbar“ stellen.
+- **Reserviert:** Feld **Status** auf „Reserviert“ stellen. Die Maschine bleibt sichtbar und bekommt eine orange Marke „Reserviert“.
+- **Verkauft:** Feld **Status** auf „Verkauft“ stellen. Die Maschine verschwindet von der Seite. Die Daten bleiben gespeichert – platzt der Verkauf, einfach wieder auf „Verfügbar“ stellen.
 
 ## Neue Maschine anlegen
-1. **Maschinen** → oben rechts **Neuer Eintrag**.
+1. **Maschinen** → oben rechts **Add an entry**.
 2. Ausfüllen:
    - **Bezeichnung** (Pflicht), z. B. `TRIPLE-X 4.0-13`
-   - **Zusatz**, z. B. `Mulchgrubber Premium mit Dachringwalze`
+   - **Zusatz**, z. B. `mit Dachringwalze`
    - **Kategorie** (Pflicht): bestimmt, wo die Maschine auf der Seite erscheint
-   - **Preis**, **Arbeitsbreite** (z. B. `4,0 m`)
-   - **Eckdaten**: pro Stichpunkt eine Zeile, z. B. `Dachringwalze Ø 600 mm`
+   - **Status** (Pflicht): normalerweise „Verfügbar“
+   - **Preis** und **Arbeitsbreite** (z. B. `4,0 m`)
+   - **Eckdaten**: pro Stichpunkt ein Feld, mit **Add an item** kommt ein weiteres dazu
    - **Fotos**: siehe unten
-   - **Auf der Startseite zeigen**: Haken setzen, wenn die Maschine unter „Aktuell ab Lager“ erscheinen soll (am besten höchstens 6 Maschinen)
-3. Speichern.
+   - **Auf der Startseite zeigen**: Schalter einschalten, wenn die Maschine unter „Aktuell ab Lager“ erscheinen soll (am besten höchstens 6 Maschinen)
+3. **Save**.
 
-Tipp: Eine ähnliche Maschine öffnen und die Felder dort abschauen. Beim TRIPLE-X-Grubber (Kategorie **Grubber**, Bezeichnung beginnt mit `TRIPLE-X`) landet die Maschine automatisch in der Preistabelle auf der Grubber-Seite.
+Tipp: Eine ähnliche Maschine öffnen und die Felder dort abschauen. Eine Maschine der Kategorie **Grubber**, deren Bezeichnung mit `TRIPLE-X` beginnt, erscheint automatisch in der Preistabelle auf der Grubber-Seite.
 
 ## Fotos hochladen
-1. In der Maschine beim Feld **Fotos** auf **Hinzufügen / Hochladen** klicken.
-2. Die Fotos vom Handy oder Computer auswählen (mehrere gleichzeitig möglich).
-3. Das **erste Foto** ist das Titelbild auf der Karte. Mit dem Ziehen-Symbol lässt sich die Reihenfolge ändern, mit dem Papierkorb-Symbol ein Foto entfernen.
-4. Speichern.
+1. In der Maschine ganz unten beim Feld **Fotos**:
+   - **Upload**: neue Fotos vom Computer oder Handy hochladen
+   - **Select**: ein schon hochgeladenes Foto auswählen
+2. Das **erste Foto** ist das Titelbild auf der Karte. Die Reihenfolge änderst du, indem du ein Foto mit der Maus an eine andere Stelle ziehst. Mit dem Papierkorb-Symbol am Foto nimmst du es aus der Maschine.
+3. **Save**.
 
-Du musst die Fotos **nicht verkleinern**: Die Seite macht daraus automatisch kleine Vorschaubilder und große Ansichten. Querformat sieht auf der Seite am besten aus. Ab etwa 4 Fotos pro Maschine erscheint sie zusätzlich in der Bildergalerie.
+Du musst die Fotos **nicht verkleinern**: Die Seite macht daraus automatisch kleine Vorschaubilder und große Ansichten (der Standort aus Handyfotos wird dabei entfernt). Querformat sieht am besten aus. Ab 4 Fotos pro Maschine erscheint sie zusätzlich in der Bildergalerie.
 
 ## Firma & Kontakt
 Dort pflegst du Telefon, E-Mail, Öffnungszeiten, Rechtsform, Handelsregister, USt-ID, den Text „Über uns“ und ein Foto. Leere Felder werden auf der fertigen Seite einfach weggelassen.
 
 ### Seite „live“ schalten
-Solange oben **Seite ist … Entwurf** steht, ist die Seite für Google gesperrt und zeigt gelbe Hinweise und einen Entwurfsbalken. Zum Livegang:
+Solange oben **Seite ist …** auf **Entwurf** steht, ist die Seite für Google gesperrt und zeigt gelbe Hinweise und einen Entwurfsbalken. Zum Livegang:
 1. E-Mail-Adresse eintragen (Pflicht fürs Impressum), Öffnungszeiten usw. ergänzen.
 2. Impressum und Datenschutzerklärung rechtlich prüfen lassen.
-3. **Seite ist …** auf **Live** stellen und speichern.
+3. **Seite ist …** auf **Live** stellen und **Save**.
 
-Wenn bei „Live“ die E-Mail fehlt, wird die Seite absichtlich **nicht** aktualisiert (sie bleibt, wie sie war). Dann die E-Mail eintragen und erneut speichern.
+Fehlt bei „Live“ die E-Mail, wird die Seite absichtlich **nicht** aktualisiert (sie bleibt, wie sie war). Dann E-Mail eintragen und erneut speichern.
 
 ## Wenn etwas nicht klappt
-- **Die Änderung erscheint nach 5 Minuten nicht:** Seite mit Strg + F5 neu laden. Hilft das nicht, kurz bei dem melden, der die Seite eingerichtet hat – im Repository unter „Actions“ steht, was schiefging.
-- **Eine Maschine fehlt auf der Seite:** Status auf „Verkauft“? Kategorie und Bezeichnung ausgefüllt?
-- **Ein Foto fehlt:** Wurde es nach dem Hochladen gespeichert? Foto im Feld **Fotos** neu hinzufügen.
+- **Die Änderung erscheint nach 5 Minuten nicht:** Seite mit Strg + F5 neu laden. Hilft das nicht, bei dem melden, der die Seite eingerichtet hat – im Repository unter „Actions“ steht, was schiefging.
+- **Eine Maschine fehlt auf der Seite:** Steht der Status auf „Verkauft“? Sind Bezeichnung und Kategorie ausgefüllt?
+- **Ein Foto fehlt:** Wurde nach dem Hochladen gespeichert (**Save**)? Foto im Feld **Fotos** noch einmal hinzufügen.
 
 ## Zugang einrichten (einmalig, durch den Betreuer der Seite)
-1. Auf https://app.pagescms.org mit dem GitHub-Konto anmelden, das das Repository `agroxx-website` besitzt.
+1. Auf https://app.pagescms.org mit dem GitHub-Konto anmelden, das das Repository `agroxx-website` besitzt (die GitHub-App von Pages CMS muss für dieses Repository freigegeben sein).
 2. Das Projekt öffnen → **Collaborators** → die E-Mail-Adresse von Thomas hinzufügen. Er bekommt eine Einladung und braucht dafür **kein** GitHub-Konto.
