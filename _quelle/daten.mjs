@@ -29,7 +29,7 @@ const bp = (datei) => `/bilder/original/${datei}`;
 
 // ---------- Firma ----------
 const f = lies('daten', 'firma.json');
-export const MODUS = f.modus === 'Live' ? 'live' : 'entwurf';
+export const MODUS = f.modus === 'Live' ? 'live' : f.modus === 'Vorstellung' ? 'vorstellung' : 'entwurf';
 
 function telefonLink(t) {
   let s = t.replace(/[^\d+]/g, '');

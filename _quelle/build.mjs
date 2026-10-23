@@ -6,7 +6,8 @@ import { FIRMA, MODUS, TRAKTORPOOL, KATEGORIEN, PRODUKTE, GALERIEN, GRUBBER, WAR
 import { verarbeiteBilder } from './bilder.mjs';
 
 const ziel = join(WURZEL, 'dist');
-const entwurf = MODUS === 'entwurf';
+const entwurf = MODUS === 'entwurf'; // gelbe Hinweise, Platzhalter, Entwurfsbalken
+const gesperrt = MODUS !== 'live'; // für Suchmaschinen gesperrt (Entwurf und Vorstellung)
 
 if (MODUS === 'live' && !FIRMA.email) throw new Error('Modus "Live": In "Firma & Kontakt" fehlt die E-Mail-Adresse (Pflichtangabe im Impressum). Bitte eintragen oder auf "Entwurf" stellen.');
 if (!FIRMA.telefon) throw new Error('In "Firma & Kontakt" fehlt die Telefonnummer.');
@@ -24,6 +25,7 @@ const adresseZeile = `${FIRMA.strasse}, ${FIRMA.plz} ${FIRMA.ort}`;
 const routeLink = `https://www.openstreetmap.org/search?query=${encodeURIComponent(adresseZeile)}`;
 const emailLink = FIRMA.email ? `<a href="mailto:${esc(FIRMA.email)}">${esc(FIRMA.email)}</a>` : platz('E-Mail-Adresse bitte ergänzen');
 const oeffnung = FIRMA.oeffnungszeiten ? esc(FIRMA.oeffnungszeiten).replace(/\n/g, '<br>') : platz('Öffnungszeiten bitte ergänzen');
+const emailTeil = (trenner) => (FIRMA.email || entwurf ? `${trenner}E-Mail: ${emailLink}` : '');
 const waAnfrage = (t) => `${FIRMA.whatsapp}?text=${encodeURIComponent(t)}`;
 
 const kategorienMitWare = KATEGORIEN.filter((k) => PRODUKTE.some((p) => p.kat === k.key));
@@ -59,7 +61,7 @@ function seite({ datei, titel, beschreibung, inhalt, hero = '' }) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(titel)}</title>
 <meta name="description" content="${esc(beschreibung)}">
-${entwurf ? '<meta name="robots" content="noindex, nofollow">\n' : ''}<meta name="theme-color" content="#1f4a6e">
+${gesperrt ? '<meta name="robots" content="noindex, nofollow">\n' : ''}<meta name="theme-color" content="#1f4a6e">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231f4a6e'/%3E%3Ctext x='32' y='45' font-family='Georgia' font-size='34' font-weight='700' text-anchor='middle' fill='%23fff'%3Ea%3Ctspan fill='%23f0883a'%3EX%3C/tspan%3E%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -82,7 +84,7 @@ ${hero}${inhalt}
     <div>
       <h3>${esc(FIRMA.name)}</h3>
       <p>${esc(FIRMA.inhaber)}<br>${esc(FIRMA.strasse)}<br>${esc(FIRMA.plz)} ${esc(FIRMA.ort)}</p>
-      <p>Telefon / WhatsApp: <a href="tel:${FIRMA.telefonLink}">${esc(FIRMA.telefon)}</a><br>E-Mail: ${FIRMA.email ? emailLink : platz('ergänzen')}</p>
+      <p>Telefon / WhatsApp: <a href="tel:${FIRMA.telefonLink}">${esc(FIRMA.telefon)}</a>${emailTeil('<br>')}</p>
     </div>
     <div>
       <h3>Maschinen</h3>
@@ -435,7 +437,7 @@ const impressum = seite({
   <p><strong>${esc(FIRMA.name)}</strong><br>Inhaber: ${esc(FIRMA.inhaber)}<br>${esc(FIRMA.strasse)}<br>${esc(FIRMA.plz)} ${esc(FIRMA.ort)}<br>Deutschland</p>
   ${rechtsangaben ? `<p>${rechtsangaben}</p>` : entwurf ? `<p>${platz('Rechtsform bitte prüfen / ergänzen, z. B. Einzelunternehmen')}<br>${platz('Falls vorhanden: Handelsregister, Registergericht und Registernummer')}</p>` : ''}
   <h2>Kontakt</h2>
-  <p>Telefon / WhatsApp: <a href="tel:${FIRMA.telefonLink}">${esc(FIRMA.telefon)}</a><br>E-Mail: ${emailLink}</p>
+  <p>Telefon / WhatsApp: <a href="tel:${FIRMA.telefonLink}">${esc(FIRMA.telefon)}</a>${emailTeil('<br>')}</p>
   ${FIRMA.ustId || entwurf ? `<h2>Umsatzsteuer-ID</h2>
   <p>Umsatzsteuer-Identifikationsnummer gemäß § 27a Umsatzsteuergesetz:<br>${FIRMA.ustId ? esc(FIRMA.ustId) : platz('DE ___ bitte ergänzen (falls vorhanden)')}</p>` : ''}
   <h2>Verantwortlich für den Inhalt (§ 18 Abs. 2 MStV)</h2>
@@ -461,7 +463,7 @@ const datenschutz = seite({
   <h1>Datenschutzerklärung</h1>
   ${entwurf ? '<p class="hinweisbox">Entwurf auf Basis einer reinen Informationsseite ohne Cookies, Tracking, Formulare und Karteneinbindung. Bitte vor dem Livegang rechtlich prüfen lassen. Falls später Formulare, Karten, Videos oder Statistik hinzukommen, muss der Text angepasst werden.</p>' : ''}
   <h2>1. Verantwortlicher</h2>
-  <p>${esc(FIRMA.name)}, ${esc(FIRMA.inhaber)}<br>${esc(FIRMA.strasse)}, ${esc(FIRMA.plz)} ${esc(FIRMA.ort)}<br>Telefon: ${esc(FIRMA.telefon)}<br>E-Mail: ${emailLink}</p>
+  <p>${esc(FIRMA.name)}, ${esc(FIRMA.inhaber)}<br>${esc(FIRMA.strasse)}, ${esc(FIRMA.plz)} ${esc(FIRMA.ort)}<br>Telefon: ${esc(FIRMA.telefon)}${emailTeil('<br>')}</p>
   <h2>2. Hosting und Server-Logfiles</h2>
   <p>Diese Website wird über den Dienst GitHub Pages der GitHub Inc. (88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA) bereitgestellt. Beim Aufruf verarbeitet GitHub technisch notwendige Daten, insbesondere die IP-Adresse, Datum und Uhrzeit, die aufgerufene Seite und den verwendeten Browser, um die Seite auszuliefern und abzusichern (Art. 6 Abs. 1 lit. f DSGVO). Dabei kann eine Übermittlung von Daten in die USA stattfinden. Näheres regelt die Datenschutzerklärung von GitHub. ${platz('Bitte rechtlich prüfen: Drittlandübermittlung und Vertrag mit dem Hosting-Anbieter.')}</p>
   <h2>3. Cookies und Tracking</h2>
@@ -486,9 +488,9 @@ cpSync(join(WURZEL, 'css'), join(ziel, 'css'), { recursive: true });
 cpSync(join(WURZEL, 'js'), join(ziel, 'js'), { recursive: true });
 const dateien = { 'index.html': index, 'grubber.html': grubber, 'produkte.html': produkte, 'galerie.html': galerie, 'ueber-uns.html': ueberUns, 'kontakt.html': kontakt, 'impressum.html': impressum, 'datenschutz.html': datenschutz };
 for (const [name, html] of Object.entries(dateien)) writeFileSync(join(ziel, name), html);
-writeFileSync(join(ziel, 'robots.txt'), entwurf ? 'User-agent: *\nDisallow: /\n' : 'User-agent: *\nAllow: /\n');
+writeFileSync(join(ziel, 'robots.txt'), gesperrt ? 'User-agent: *\nDisallow: /\n' : 'User-agent: *\nAllow: /\n');
 
 const b = await verarbeiteBilder(ziel);
-console.log(`Modus: ${entwurf ? 'Entwurf (für Suchmaschinen gesperrt)' : 'Live'} · ${Object.keys(dateien).length} Seiten · ${PRODUKTE.length} Maschinen · ${GALERIEN.reduce((s, x) => s + x.bilder.length, 0)} Galeriebilder · Bilder: ${b.neu} neu verkleinert, ${b.uebersprungen} unverändert`);
+console.log(`Modus: ${{ entwurf: 'Entwurf (für Suchmaschinen gesperrt)', vorstellung: 'Vorstellung (ohne Hinweise, für Suchmaschinen gesperrt)', live: 'Live' }[MODUS]} · ${Object.keys(dateien).length} Seiten · ${PRODUKTE.length} Maschinen · ${GALERIEN.reduce((s, x) => s + x.bilder.length, 0)} Galeriebilder · Bilder: ${b.neu} neu verkleinert, ${b.uebersprungen} unverändert`);
 for (const w of WARNUNGEN) console.warn('Hinweis: ' + w);
 if (b.fehler.length) { console.error('Bilder, die nicht verarbeitet werden konnten:\n' + b.fehler.join('\n')); process.exitCode = 1; }

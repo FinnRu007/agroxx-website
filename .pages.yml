@@ -106,10 +106,11 @@ content:
         type: select
         required: true
         default: Entwurf
-        description: "„Entwurf“: gelbe Hinweise sichtbar, für Google gesperrt. „Live“: öffentlich, Platzhalter und Entwurfsbalken verschwinden. Auf „Live“ stellen erst, wenn die E-Mail eingetragen und die Rechtstexte geprüft sind."
+        description: "„Entwurf“: gelbe Hinweise und Balken sichtbar. „Vorstellung“: sauber ohne Hinweise, aber weiter für Google gesperrt (zum Zeigen). „Live“: öffentlich, für Google freigegeben; erst wählen, wenn E-Mail und Rechtstexte fertig sind."
         options:
           values:
             - Entwurf
+            - Vorstellung
             - Live
       - name: telefon
         label: Telefon / WhatsApp
