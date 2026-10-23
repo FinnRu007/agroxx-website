@@ -17,10 +17,24 @@ Vorschau im Browser unter http://localhost:8123 :
 
 Farben und Schrift: oben in `css/style.css` (`:root`).
 
+## Veröffentlichen (GitHub Pages)
+Entwurf online: https://finnru007.github.io/agroxx-website/ (Repo: https://github.com/FinnRu007/agroxx-website, öffentlich).
+Die fertigen Seiten liegen im Hauptordner. Nach jeder Änderung neu erzeugen und hochladen:
+
+    node _quelle/build.mjs
+    git add -A
+    git commit -m "Preise aktualisiert"
+    git push
+
+Nach etwa einer Minute ist die Änderung online.
+
+Neue Maschine mit Bildern: Bildpfade in `_quelle/daten.mjs` eintragen, dann `node _quelle/bilder-laden.mjs` (lädt die Bilder von traktorpool in `bilder/`) und neu erzeugen.
+
 ## Vor dem Livegang erledigen
+- [x] Bilder lokal gespeichert (`bilder/k` Vorschau, `bilder/g` groß).
 - [ ] Gelb markierte Platzhalter ausfüllen (E-Mail, Öffnungszeiten, USt-IdNr., Rechtsform, Firmengeschichte, Foto von Thomas).
-- [ ] Bilder lokal speichern (aktuell werden sie von traktorpool.de geladen – das gibt Datenschutz- und Ausfallrisiko).
 - [ ] Impressum und Datenschutz rechtlich prüfen lassen.
-- [ ] Preise prüfen (Stand 23.10.2026, quelle: traktorpool.de/agroxx) – oder ganz entfernen, wenn sie nicht dauerhaft gepflegt werden.
-- [ ] `<meta name="robots" content="noindex">` in `_quelle/build.mjs` entfernen und den gelben „Entwurf“-Balken löschen.
-- [ ] Domain, Hosting und ggf. Anfrageformular klären.
+- [ ] Preise prüfen (Stand 23.10.2026, Quelle: traktorpool.de/agroxx) – oder ganz entfernen, wenn sie nicht dauerhaft gepflegt werden.
+- [ ] Entwurfsschutz aufheben: `<meta name="robots" content="noindex">` in `_quelle/build.mjs` entfernen, `robots.txt` löschen, gelben „Entwurf“-Balken entfernen.
+- [ ] Eigene Domain? Sonst bleibt es bei der github.io-Adresse.
+- [ ] Pflege für Thomas klären (Formular-Oberfläche, nur traktorpool-Link oder manuell).
