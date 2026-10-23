@@ -1,0 +1,20 @@
+{
+  "sonderausruestung": [
+    {
+      "bezeichnung": "Dachringwalze 600 mm mit aufgeschweißten Stegen",
+      "preis": 200
+    },
+    {
+      "bezeichnung": "STS-U-Profilringwalze 600 mm",
+      "preis": 650
+    },
+    {
+      "bezeichnung": "Striegelzinkenbalken nach dem Nachläufer, in Höhe und Neigung verstellbar",
+      "preis": 1700
+    },
+    {
+      "bezeichnung": "LED-Beleuchtung und Warntafeln mit verzinkten Spezialhaltern",
+      "preis": 250
+    }
+  ]
+}

@@ -1,25 +1,38 @@
-// Erzeugt die fertigen HTML-Seiten im Ordner darüber:  node _quelle/build.mjs
-import { writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { FIRMA, TRAKTORPOOL, KATEGORIEN, PRODUKTE, GALERIEN, dateiname } from './daten.mjs';
+// Erzeugt die fertige Website im Ordner dist/ aus daten/ und bilder/original/:   node _quelle/build.mjs
+// (Auf GitHub läuft das automatisch bei jeder Änderung, siehe .github/workflows/seite.yml)
+import { cpSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { FIRMA, MODUS, TRAKTORPOOL, KATEGORIEN, PRODUKTE, GALERIEN, GRUBBER, WARNUNGEN, WURZEL, S, bilderVon, ERSATZBILD, dateiname, euro } from './daten.mjs';
+import { verarbeiteBilder } from './bilder.mjs';
 
-const ziel = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ziel = join(WURZEL, 'dist');
+const entwurf = MODUS === 'entwurf';
+
+if (MODUS === 'live' && !FIRMA.email) throw new Error('Modus "Live": In "Firma & Kontakt" fehlt die E-Mail-Adresse (Pflichtangabe im Impressum). Bitte eintragen oder auf "Entwurf" stellen.');
+if (!FIRMA.telefon) throw new Error('In "Firma & Kontakt" fehlt die Telefonnummer.');
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-// Bilder liegen lokal in bilder/k (640 px) und bilder/g (1600 px); größere Anfragen nehmen die große Datei
+// Bilder liegen in bilder/k (640 px) und bilder/g (1600 px); größere Anfragen nehmen die große Datei
 const gross = (p) => `bilder/g/${dateiname(p)}`;
 const klein = (p, w = 640) => (w > 800 ? gross(p) : `bilder/k/${dateiname(p)}`);
-const platz = (t) => `<mark class="platzhalter">${esc(t)}</mark>`;
-const katByKey = Object.fromEntries(KATEGORIEN.map((k) => [k.key, k]));
+const platz = (t) => (entwurf ? `<mark class="platzhalter">${esc(t)}</mark>` : '');
+const absaetze = (t) => t.split(/\n\s*\n/).map((a) => `<p>${esc(a.trim()).replace(/\n/g, '<br>')}</p>`).join('');
+const zeile = (dt, dd) => (dd ? `<dt>${dt}</dt><dd>${dd}</dd>` : '');
+const stand = new Date().toLocaleDateString('de-DE', { timeZone: 'Europe/Berlin' });
 
 const adresseZeile = `${FIRMA.strasse}, ${FIRMA.plz} ${FIRMA.ort}`;
 const routeLink = `https://www.openstreetmap.org/search?query=${encodeURIComponent(adresseZeile)}`;
-const emailZeile = FIRMA.email ? `<a href="mailto:${FIRMA.email}">${FIRMA.email}</a>` : platz('E-Mail-Adresse bitte ergänzen');
+const emailLink = FIRMA.email ? `<a href="mailto:${esc(FIRMA.email)}">${esc(FIRMA.email)}</a>` : platz('E-Mail-Adresse bitte ergänzen');
+const oeffnung = FIRMA.oeffnungszeiten ? esc(FIRMA.oeffnungszeiten).replace(/\n/g, '<br>') : platz('Öffnungszeiten bitte ergänzen');
+const waAnfrage = (t) => `${FIRMA.whatsapp}?text=${encodeURIComponent(t)}`;
 
-function waAnfrage(text) {
-  return `${FIRMA.whatsapp}?text=${encodeURIComponent(text)}`;
-}
+const kategorienMitWare = KATEGORIEN.filter((k) => PRODUKTE.some((p) => p.kat === k.key));
+const proKat = (k) => PRODUKTE.filter((p) => p.kat === k).length;
+const titelZuBild = new Map(PRODUKTE.flatMap((p) => p.bilder.map((b) => [b, p.name])));
+const hero = (datei, alt = '', extra = '') => {
+  const p = S(datei) || ERSATZBILD;
+  return p ? `<img src="${gross(p)}" alt="${esc(alt)}"${extra}>` : '';
+};
 
 const NAV = [
   ['index.html', 'Start'],
@@ -46,15 +59,13 @@ function seite({ datei, titel, beschreibung, inhalt, hero = '' }) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(titel)}</title>
 <meta name="description" content="${esc(beschreibung)}">
-<meta name="robots" content="noindex, nofollow"><!-- ENTWURF: vor der Veröffentlichung entfernen -->
-<meta name="theme-color" content="#1f4a6e">
+${entwurf ? '<meta name="robots" content="noindex, nofollow">\n' : ''}<meta name="theme-color" content="#1f4a6e">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231f4a6e'/%3E%3Ctext x='32' y='45' font-family='Georgia' font-size='34' font-weight='700' text-anchor='middle' fill='%23fff'%3Ea%3Ctspan fill='%23f0883a'%3EX%3C/tspan%3E%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <a class="skip" href="#inhalt">Zum Inhalt springen</a>
-<div class="entwurf-hinweis">Entwurf zur Ansicht – Inhalte, Bilder und Rechtstexte sind noch nicht freigegeben.</div>
-<div class="topleiste"><div class="wrap">
+${entwurf ? '<div class="entwurf-hinweis">Entwurf zur Ansicht – Inhalte, Bilder und Rechtstexte sind noch nicht freigegeben.</div>\n' : ''}<div class="topleiste"><div class="wrap">
   <span class="adresse">${esc(FIRMA.strasse)} · ${esc(FIRMA.plz)} ${esc(FIRMA.ort)}</span>
   <span>Beratung &amp; Verkauf: <a href="tel:${FIRMA.telefonLink}">${esc(FIRMA.telefon)}</a> &nbsp;|&nbsp; <a href="${FIRMA.whatsapp}">WhatsApp</a></span>
 </div></div>
@@ -71,11 +82,11 @@ ${hero}${inhalt}
     <div>
       <h3>${esc(FIRMA.name)}</h3>
       <p>${esc(FIRMA.inhaber)}<br>${esc(FIRMA.strasse)}<br>${esc(FIRMA.plz)} ${esc(FIRMA.ort)}</p>
-      <p>Telefon / WhatsApp: <a href="tel:${FIRMA.telefonLink}">${esc(FIRMA.telefon)}</a><br>E-Mail: ${FIRMA.email ? `<a href="mailto:${FIRMA.email}">${FIRMA.email}</a>` : platz('ergänzen')}</p>
+      <p>Telefon / WhatsApp: <a href="tel:${FIRMA.telefonLink}">${esc(FIRMA.telefon)}</a><br>E-Mail: ${FIRMA.email ? emailLink : platz('ergänzen')}</p>
     </div>
     <div>
       <h3>Maschinen</h3>
-      <ul>${KATEGORIEN.slice(0, 6).map((k) => `<li><a href="produkte.html#${k.key}">${esc(k.titel)}</a></li>`).join('')}</ul>
+      <ul>${kategorienMitWare.slice(0, 6).map((k) => `<li><a href="produkte.html#${k.key}">${esc(k.titel)}</a></li>`).join('')}</ul>
     </div>
     <div>
       <h3>Die Firma</h3>
@@ -98,15 +109,22 @@ ${hero}${inhalt}
 
 // ---------- Bausteine ----------
 function karte(p) {
-  const wa = waAnfrage(`Guten Tag, ich interessiere mich für: ${p.name} (Inserat ${p.id}).`);
+  const wa = waAnfrage(`Guten Tag, ich interessiere mich für: ${p.name}${p.zusatz ? ` (${p.zusatz})` : ''}${p.inserat ? `, Inserat ${p.inserat}` : ''}.`);
+  const bild = p.bild
+    ? `<a class="bild" href="${gross(p.bild)}" data-lightbox="produkte-${p.kat}" data-caption="${esc(p.name)}"><img src="${klein(p.bild)}" alt="${esc(p.name)}" loading="lazy" width="640" height="480"></a>`
+    : '<div class="bild kein-bild">Foto folgt</div>';
+  const nr = p.inserat ? `Inserat-Nr. ${esc(p.inserat)}` : '';
+  const preis = p.preis
+    ? `<div class="preis">${esc(p.preis)} €<small>netto zzgl. 19&nbsp;% MwSt.${nr ? ` · ${nr}` : ''}</small></div>`
+    : `<div class="preis preis-anfrage">Preis auf Anfrage${nr ? `<small>${nr}</small>` : ''}</div>`;
   return `<article class="karte">
-  <a class="bild" href="${gross(p.bild)}" data-lightbox="produkte-${p.kat}" data-caption="${esc(p.name)}"><img src="${klein(p.bild)}" alt="${esc(p.name)}" loading="lazy" width="640" height="480"></a>
+  ${p.status === 'Reserviert' ? '<span class="status-marke">Reserviert</span>' : ''}${bild}
   <div class="inhalt">
     <h3>${esc(p.name)}</h3>
-    <p class="zusatz">${esc(p.zusatz)}</p>
-    <ul>${p.specs.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>
+    ${p.zusatz ? `<p class="zusatz">${esc(p.zusatz)}</p>` : ''}
+    ${p.specs.length ? `<ul>${p.specs.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
     <div class="preiszeile">
-      <div class="preis">${esc(p.preis)} €<small>netto zzgl. 19&nbsp;% MwSt. · Inserat-Nr. ${p.id}</small></div>
+      ${preis}
       <div class="aktionen"><a class="btn btn-orange btn-klein" href="${wa}">Per WhatsApp anfragen</a><a class="btn btn-rand-blau btn-klein" href="tel:${FIRMA.telefonLink}">Anrufen</a></div>
     </div>
   </div>
@@ -115,7 +133,7 @@ function karte(p) {
 
 function galerieGitter(g, name, mitGross = true) {
   return `<div class="galerie">${g.bilder
-    .map((b, i) => `<a href="${gross(b)}"${mitGross && i === 0 ? ' class="gross"' : ''} data-lightbox="${name}" data-caption="${esc(g.titel)}"><img src="${klein(b, i === 0 && mitGross ? 960 : 480, i === 0 && mitGross ? 720 : 360)}" alt="${esc(g.titel)} – Bild ${i + 1}" loading="lazy"></a>`)
+    .map((b, i) => `<a href="${gross(b)}"${mitGross && i === 0 ? ' class="gross"' : ''} data-lightbox="${name}" data-caption="${esc(g.titel)}"><img src="${klein(b, i === 0 && mitGross ? 960 : 480)}" alt="${esc(g.titel)} – Bild ${i + 1}" loading="lazy"></a>`)
     .join('')}</div>`;
 }
 
@@ -132,20 +150,24 @@ const kontaktBand = `<section class="kontaktband"><div class="wrap"><div class="
   </div>
 </div></div></section>`;
 
+const heroKopf = (kicker, h1, p, bild, alt = '') => `<section class="hero hero-klein">
+  ${hero(bild, alt)}
+  <div class="wrap"><p class="kicker">${kicker}</p><h1>${h1}</h1><p>${p}</p></div>
+</section>`;
+
 // ---------- Startseite ----------
-const proKat = (k) => PRODUKTE.filter((p) => p.kat === k).length;
-const aktuell = ['7373771', '8335292', '4995195', '8876326', '8428157', '8872720'].map((id) => PRODUKTE.find((p) => p.id === id));
-const mosaik = [
-  [GALERIEN[0], 2], [GALERIEN[1], 1], [GALERIEN[4], 2], [GALERIEN[5], 1], [GALERIEN[6], 2], [GALERIEN[7], 1],
-  [GALERIEN[8], 2], [GALERIEN[3], 1], [GALERIEN[9], 2], [GALERIEN[2], 1], [GALERIEN[0], 5], [GALERIEN[4], 4], [GALERIEN[5], 3],
-].map(([g, i]) => ({ titel: g.titel, bild: g.bilder[i] }));
+let aktuell = PRODUKTE.filter((p) => p.startseite).slice(0, 6);
+if (!aktuell.length) aktuell = PRODUKTE.filter((p) => p.bild && p.preisZahl > 1000).slice(0, 6);
+let mosaik = bilderVon('7373771-46402506.jpg', '7373770-46402451.jpg', '8335292-57833134.jpg', '8876326-65446972.jpg', '4995195-28536734.jpg', '8448821-59340483.jpg', '8428162-59086176.jpg', '8872720-65407764.jpg', '8335855-57840002.jpg', '8870254-65368729.jpg', '7373771-46402513.jpg', '8335292-57833135.jpg', '8876326-65446963.jpg');
+mosaik = mosaik.slice(0, 1 + 4 * Math.floor((mosaik.length - 1) / 4)); // volle Zeilen im Raster
+const schwerpunktBilder = bilderVon('7373771-46402562.jpg', '7373771-46402488.jpg', '7373771-46402487.jpg');
 
 const index = seite({
   datei: 'index.html',
   titel: 'agroXX techniCCenter Ennigerloh – Grubber, Scheibeneggen, Pflüge ab Lager',
   beschreibung: 'agroXX techniCCenter in Ennigerloh: Mulchgrubber, Kurzscheibeneggen, Pflüge, Walzen und Tiefenlockerer – ständig 50 bis 80 Maschinen ab Lager. Beratung durch Thomas Schalkamp.',
   hero: `<section class="hero">
-  <img src="${gross(GALERIEN[0].bilder[1])}" alt="Mulchgrubber TRIPLE-X im Einsatz hinter dem Schlepper" fetchpriority="high">
+  ${hero('7373771-46402507.jpg', 'Mulchgrubber im Einsatz hinter dem Schlepper', ' fetchpriority="high"')}
   <div class="wrap">
     <p class="kicker">Landtechnik aus Ennigerloh</p>
     <h1>Bodenbearbeitung, auf die Sie sich verlassen können.</h1>
@@ -163,16 +185,17 @@ const index = seite({
 <section class="abschnitt"><div class="wrap">
   <div class="abschnitt-kopf"><h2>Unsere Maschinen</h2><span class="unterstrich"></span><p>Alles für Stoppelbearbeitung, Saatbettbereitung und Grundbodenbearbeitung – vom Mulchgrubber bis zum Muldenkipper.</p></div>
   <div class="kacheln">
-    ${KATEGORIEN.map((k) => `<a class="kachel" href="produkte.html#${k.key}"><img src="${klein(k.bild)}" alt="${esc(k.lang)}" loading="lazy"><span class="titel"><strong>${esc(k.titel)}</strong><span>${proKat(k.key)} im Angebot</span></span></a>`).join('\n    ')}
+    ${kategorienMitWare.map((k) => {
+      const bildPfad = S(k.bild.split('/').pop()) || PRODUKTE.find((p) => p.kat === k.key && p.bild)?.bild;
+      return `<a class="kachel" href="produkte.html#${k.key}">${bildPfad ? `<img src="${klein(bildPfad)}" alt="${esc(k.lang)}" loading="lazy">` : ''}<span class="titel"><strong>${esc(k.titel)}</strong><span>${proKat(k.key)} im Angebot</span></span></a>`;
+    }).join('\n    ')}
   </div>
 </div></section>
 
 <section class="abschnitt hell"><div class="wrap schwerpunkt">
-  <div class="bildreihe">
-    <a href="${gross(GALERIEN[0].bilder[0])}" data-lightbox="start-grubber" data-caption="Mulchgrubber TRIPLE-X 4.0-13 Premium"><img src="${klein(GALERIEN[0].bilder[0], 960, 720)}" alt="Mulchgrubber TRIPLE-X 4.0-13 Premium" loading="lazy"></a>
-    <a href="${gross(GALERIEN[0].bilder[3])}" data-lightbox="start-grubber" data-caption="Mulchgrubber TRIPLE-X Premium"><img src="${klein(GALERIEN[0].bilder[3])}" alt="Mulchgrubber TRIPLE-X Premium, Seitenansicht" loading="lazy"></a>
-    <a href="${gross(GALERIEN[0].bilder[8])}" data-lightbox="start-grubber" data-caption="Mulchgrubber TRIPLE-X Premium"><img src="${klein(GALERIEN[0].bilder[8])}" alt="Mulchgrubber TRIPLE-X Premium, Detail" loading="lazy"></a>
-  </div>
+  ${schwerpunktBilder.length ? `<div class="bildreihe">
+    ${schwerpunktBilder.map((b, i) => `<a href="${gross(b)}" data-lightbox="start-grubber" data-caption="Mulchgrubber TRIPLE-X Premium"><img src="${klein(b, i === 0 ? 960 : 640)}" alt="Mulchgrubber TRIPLE-X Premium" loading="lazy"></a>`).join('\n    ')}
+  </div>` : ''}
   <div>
     <p class="kicker" style="color:var(--orange-dunkel);text-transform:uppercase;letter-spacing:.14em;font-weight:700;font-size:.9rem;margin-bottom:.4em">Unser Schwerpunkt</p>
     <h2>Mulchgrubber TRIPLE-X Premium</h2>
@@ -190,16 +213,16 @@ const index = seite({
 </div></section>
 
 <section class="abschnitt"><div class="wrap">
-  <div class="abschnitt-kopf"><h2>Aktuell ab Lager</h2><span class="unterstrich"></span><p>Eine Auswahl aus unserem Bestand. Den kompletten Bestand mit allen Preisen finden Sie unter <a href="produkte.html">Maschinen</a>.</p></div>
+  <div class="abschnitt-kopf"><h2>Aktuell ab Lager</h2><span class="unterstrich"></span><p>Eine Auswahl aus unserem Bestand. Den kompletten Bestand finden Sie unter <a href="produkte.html">Maschinen</a>.</p></div>
   <div class="karten">${aktuell.map(karte).join('\n')}</div>
   <div class="btn-reihe"><a class="btn btn-blau" href="produkte.html">Alle ${PRODUKTE.length} Maschinen ansehen</a></div>
 </div></section>
 
-<section class="abschnitt hell"><div class="wrap">
+${mosaik.length >= 5 ? `<section class="abschnitt hell"><div class="wrap">
   <div class="abschnitt-kopf"><h2>Einblicke</h2><span class="unterstrich"></span><p>So sehen unsere Maschinen aus. Ein Klick auf ein Bild vergrößert es.</p></div>
-  <div class="galerie">${mosaik.map((m, i) => `<a href="${gross(m.bild)}"${i === 0 ? ' class="gross"' : ''} data-lightbox="start-mosaik" data-caption="${esc(m.titel)}"><img src="${klein(m.bild, i === 0 ? 960 : 480, i === 0 ? 720 : 360)}" alt="${esc(m.titel)}" loading="lazy"></a>`).join('')}</div>
+  <div class="galerie">${mosaik.map((b, i) => `<a href="${gross(b)}"${i === 0 ? ' class="gross"' : ''} data-lightbox="start-mosaik" data-caption="${esc(titelZuBild.get(b) || FIRMA.name)}"><img src="${klein(b, i === 0 ? 960 : 480)}" alt="${esc(titelZuBild.get(b) || FIRMA.name)}" loading="lazy"></a>`).join('')}</div>
   <div class="btn-reihe"><a class="btn btn-rand-blau" href="galerie.html">Alle Bilder ansehen</a></div>
-</div></section>
+</div></section>` : ''}
 
 <section class="abschnitt"><div class="wrap zweispaltig">
   <div>
@@ -213,7 +236,7 @@ const index = seite({
     <dl class="daten">
       <dt>Anschrift</dt><dd>${esc(FIRMA.name)}<br>${esc(FIRMA.strasse)}, ${esc(FIRMA.plz)} ${esc(FIRMA.ort)}</dd>
       <dt>Telefon / WhatsApp</dt><dd><a href="tel:${FIRMA.telefonLink}">${esc(FIRMA.telefon)}</a></dd>
-      <dt>Öffnungszeiten</dt><dd>${platz('bitte ergänzen')}</dd>
+      ${zeile('Öffnungszeiten', FIRMA.oeffnungszeiten || entwurf ? oeffnung : '')}
     </dl>
   </div>
 </div></section>
@@ -221,18 +244,17 @@ ${kontaktBand}`,
 });
 
 // ---------- Grubber ----------
-const grubberModelle = [
-  ['TRIPLE-X 3.0-10', '3,0 m', '10', 'bis 30 cm', 'Dachringwalze', '7.900 €'],
-  ['TRIPLE-X 3.0-13', '3,0 m', '13', 'bis 30 cm', 'Dachringwalze', '8.400 €'],
-  ['TRIPLE-X 4.0-13', '4,0 m', '13', 'bis 30 cm', 'Dachringwalze', '13.700 €'],
-  ['TRIPLE-X 4.8-16', '4,8 m', '16', 'bis 30 cm', 'Dachringwalze', '16.500 €'],
-];
+const triple = PRODUKTE.filter((p) => p.kat === 'grubber' && /TRIPLE-X/i.test(p.name));
+const speedline = PRODUKTE.find((p) => /Speedline/i.test(p.name));
+const grubberGalerie = [...triple].sort((a, b) => b.bilder.length - a.bilder.length)[0];
+const grubberKopf = bilderVon('7373771-46402506.jpg', '7373771-46402489.jpg', '7373771-46402491.jpg');
+const sonder = GRUBBER.sonderausruestung;
 const grubber = seite({
   datei: 'grubber.html',
   titel: 'Mulchgrubber TRIPLE-X Premium – agroXX techniCCenter Ennigerloh',
   beschreibung: 'Mulchgrubber TRIPLE-X Premium von agroXX: 3,0 bis 4,8 m Arbeitsbreite, Dachringwalze, Flügelschare, für Schlepper von 140 bis 300 PS. Ab Lager lieferbar.',
   hero: `<section class="hero hero-klein">
-  <img src="${gross(GALERIEN[0].bilder[5])}" alt="Mulchgrubber TRIPLE-X Premium">
+  ${hero('7373771-46402513.jpg', 'Mulchgrubber TRIPLE-X Premium')}
   <div class="wrap"><p class="kicker">Unser Schwerpunkt</p><h1>Mulchgrubber TRIPLE-X Premium</h1><p>Intensive Mischarbeit, sauberes Strohmanagement und zügiges Auslaufen von Ausfallgetreide – für Schlepper von 140 bis 300 PS.</p>
   <div class="btn-reihe"><a class="btn btn-orange" href="${waAnfrage('Guten Tag, ich interessiere mich für den Mulchgrubber TRIPLE-X.')}">Preis anfragen</a><a class="btn btn-rand" href="#modelle">Modelle &amp; Preise</a></div></div>
 </section>`,
@@ -252,46 +274,41 @@ const grubber = seite({
       <li><strong>Randscheiben:</strong> serienmäßig 10 gezackte Hohlscheiben Ø 465 mm, davon 2 teleskopierbare Randscheiben</li>
     </ul>
   </div>
-  <div class="bildreihe">
-    <a href="${gross(GALERIEN[0].bilder[2])}" data-lightbox="grubber-kopf" data-caption="Mulchgrubber TRIPLE-X 4.0-13 Premium"><img src="${klein(GALERIEN[0].bilder[2], 960, 720)}" alt="Mulchgrubber TRIPLE-X im Einsatz" loading="lazy"></a>
-    <a href="${gross(GALERIEN[0].bilder[9])}" data-lightbox="grubber-kopf" data-caption="Mulchgrubber TRIPLE-X Premium"><img src="${klein(GALERIEN[0].bilder[9])}" alt="Mulchgrubber TRIPLE-X, Detailansicht" loading="lazy"></a>
-    <a href="${gross(GALERIEN[0].bilder[11])}" data-lightbox="grubber-kopf" data-caption="Mulchgrubber TRIPLE-X Premium"><img src="${klein(GALERIEN[0].bilder[11])}" alt="Mulchgrubber TRIPLE-X, Detailansicht" loading="lazy"></a>
-  </div>
+  ${grubberKopf.length ? `<div class="bildreihe">
+    ${grubberKopf.map((b, i) => `<a href="${gross(b)}" data-lightbox="grubber-kopf" data-caption="Mulchgrubber TRIPLE-X Premium"><img src="${klein(b, i === 0 ? 960 : 640)}" alt="Mulchgrubber TRIPLE-X Premium" loading="lazy"></a>`).join('\n    ')}
+  </div>` : ''}
 </div></section>
 
-<section class="abschnitt" id="modelle"><div class="wrap">
+${triple.length ? `<section class="abschnitt" id="modelle"><div class="wrap">
   <div class="abschnitt-kopf"><h2>Modelle &amp; Preise</h2><span class="unterstrich"></span><p>Das vollständige Mulchgrubberprogramm gibt es von 3,0 bis 4,8 m Arbeitsbreite – mit Abscherschraubensicherung oder voll gefedert.</p></div>
   <div class="tabelle-scroll"><table class="tabelle">
-    <thead><tr><th>Modell</th><th>Arbeitsbreite</th><th>Zinken</th><th>Arbeitstiefe</th><th>Nachläufer</th><th class="re">Preis netto</th></tr></thead>
-    <tbody>${grubberModelle.map((m) => `<tr><td><strong>${m[0]}</strong></td><td>${m[1]}</td><td>${m[2]}</td><td>${m[3]}</td><td>${m[4]}</td><td class="re"><strong>${m[5]}</strong></td></tr>`).join('')}</tbody>
+    <thead><tr><th>Modell</th><th>Ausführung</th><th>Arbeitsbreite</th><th class="re">Preis netto</th></tr></thead>
+    <tbody>${triple.map((p) => `<tr><td><strong>${esc(p.name)}</strong></td><td>${esc(p.zusatz)}${p.status === 'Reserviert' ? ' <em>(reserviert)</em>' : ''}</td><td>${esc(p.breite)}</td><td class="re"><strong>${p.preis ? `${esc(p.preis)} €` : 'auf Anfrage'}</strong></td></tr>`).join('')}</tbody>
   </table></div>
-  <p style="margin-top:1em;font-size:.95rem;color:var(--text-leise)">Preise zzgl. 19&nbsp;% MwSt., Stand ${FIRMA.stand}. Weitere Ausführungen (z. B. Rohrstabwalze, STS-U-Ringwalze, voll gefedert) auf Anfrage.</p>
+  <p style="margin-top:1em;font-size:.95rem;color:var(--text-leise)">Preise zzgl. 19&nbsp;% MwSt., Stand ${stand}. Weitere Ausführungen (z. B. voll gefedert) auf Anfrage.</p>
 
-  <div class="zweispaltig" style="margin-top:44px">
-    <div class="karte-weiss">
+  ${sonder.length || speedline ? `<div class="zweispaltig" style="margin-top:44px">
+    ${sonder.length ? `<div class="karte-weiss">
       <h3>Sonderausrüstung gegen Mehrpreis</h3>
       <table class="tabelle" style="border:0"><tbody>
-        <tr><td>Dachringwalze 600 mm mit aufgeschweißten Stegen</td><td class="re"><strong>200 €</strong></td></tr>
-        <tr><td>STS-U-Profilringwalze 600 mm</td><td class="re"><strong>650 €</strong></td></tr>
-        <tr><td>Striegelzinkenbalken nach dem Nachläufer, in Höhe und Neigung verstellbar</td><td class="re"><strong>1.700 €</strong></td></tr>
-        <tr><td>LED-Beleuchtung und Warntafeln mit verzinkten Spezialhaltern</td><td class="re"><strong>250 €</strong></td></tr>
+        ${sonder.map((s) => `<tr><td>${esc(s.bezeichnung)}</td><td class="re"><strong>${s.preis ? `${euro(s.preis)} €` : 'auf Anfrage'}</strong></td></tr>`).join('\n        ')}
       </tbody></table>
       <p style="margin:.8em 0 0;font-size:.92rem;color:var(--text-leise)">Alle Preise netto zzgl. 19&nbsp;% MwSt.</p>
-    </div>
-    <div class="karte-weiss">
-      <h3>Auch interessant: Speedline 6.0 XC</h3>
-      <img class="rahmenbild" style="margin-bottom:14px" src="${klein(PRODUKTE.find((p) => p.id === '8872720').bild, 800, 600)}" alt="Großfederzinkenegge Speedline 6.0 XC" loading="lazy">
-      <p>Großfederzinkenegge mit Herkuleszinken 70 × 12 mm, 6,0 m Arbeitsbreite, bis 12 cm Arbeitstiefe und Rohrstabwalze. Hydraulisch klappbar, mit Steinsicherung.</p>
-      <p style="margin:0"><strong>11.900 €</strong> netto · <a href="produkte.html#grubber">Zum Angebot</a></p>
-    </div>
-  </div>
-</div></section>
+    </div>` : ''}
+    ${speedline ? `<div class="karte-weiss">
+      <h3>Auch interessant: ${esc(speedline.name)}</h3>
+      ${speedline.bild ? `<img class="rahmenbild" style="margin-bottom:14px" src="${klein(speedline.bild, 800)}" alt="${esc(speedline.name)}" loading="lazy">` : ''}
+      <p>${[speedline.zusatz, ...speedline.specs].filter(Boolean).map(esc).join(' · ')}</p>
+      <p style="margin:0"><strong>${speedline.preis ? `${esc(speedline.preis)} € netto` : 'Preis auf Anfrage'}</strong> · <a href="produkte.html#grubber">Zum Angebot</a></p>
+    </div>` : ''}
+  </div>` : ''}
+</div></section>` : ''}
 
-<section class="abschnitt hell"><div class="wrap">
+${grubberGalerie && grubberGalerie.bilder.length >= 4 ? `<section class="abschnitt hell"><div class="wrap">
   <div class="abschnitt-kopf"><h2>Bilder vom TRIPLE-X</h2><span class="unterstrich"></span><p>Ein Klick auf ein Bild vergrößert es. Mit den Pfeiltasten blättern Sie durch alle Bilder.</p></div>
-  ${galerieGitter(GALERIEN[0], 'grubber-galerie')}
+  ${galerieGitter({ titel: grubberGalerie.zusatz ? `${grubberGalerie.name} – ${grubberGalerie.zusatz}` : grubberGalerie.name, bilder: grubberGalerie.bilder }, 'grubber-galerie')}
   <div class="btn-reihe"><a class="btn btn-rand-blau" href="galerie.html">Weitere Bilder ansehen</a></div>
-</div></section>
+</div></section>` : ''}
 ${kontaktBand}`,
 });
 
@@ -299,16 +316,16 @@ ${kontaktBand}`,
 const produkte = seite({
   datei: 'produkte.html',
   titel: 'Maschinen und Preise – agroXX techniCCenter Ennigerloh',
-  beschreibung: `Alle Maschinen im Überblick: Mulchgrubber, Kurzscheibeneggen, Tiefenlockerer, Pflüge, Walzen, Kreiseleggen, Kipper und Reifen mit Preisen (Stand ${FIRMA.stand}).`,
+  beschreibung: `Alle Maschinen im Überblick: Mulchgrubber, Kurzscheibeneggen, Tiefenlockerer, Pflüge, Walzen, Kreiseleggen, Kipper und Reifen mit Preisen (Stand ${stand}).`,
   hero: `<section class="hero hero-klein">
-  <img src="${gross(GALERIEN[4].bilder[1])}" alt="Maschinenbestand">
-  <div class="wrap"><p class="kicker">Maschinenbestand</p><h1>Unsere Maschinen</h1><p>${PRODUKTE.length} Maschinen und Teile ab Lager. Alle Preise netto – fragen Sie gern nach Vorführgeräten und Sonderkonditionen.</p></div>
+  ${hero('8335292-57833137.jpg', 'Maschinenbestand')}
+  <div class="wrap"><p class="kicker">Maschinenbestand</p><h1>Unsere Maschinen</h1><p>${PRODUKTE.length} Maschinen und Teile im Angebot. Alle Preise netto – fragen Sie gern nach Vorführgeräten und Sonderkonditionen.</p></div>
 </section>
-<nav class="kat-nav" aria-label="Maschinenkategorien"><div class="wrap"><ul>${KATEGORIEN.map((k) => `<li><a href="#${k.key}">${esc(k.titel)} (${proKat(k.key)})</a></li>`).join('')}</ul></div></nav>`,
+<nav class="kat-nav" aria-label="Maschinenkategorien"><div class="wrap"><ul>${kategorienMitWare.map((k) => `<li><a href="#${k.key}">${esc(k.titel)} (${proKat(k.key)})</a></li>`).join('')}</ul></div></nav>`,
   inhalt: `
 <section class="abschnitt" style="padding-top:36px"><div class="wrap">
-  <p class="hinweisbox">Alle Preise in Euro netto zzgl. 19&nbsp;% MwSt., Stand ${FIRMA.stand}. Angebot freibleibend, Zwischenverkauf, Irrtümer und Änderungen vorbehalten. Alle Angaben ohne Gewähr. Bitte nennen Sie bei Rückfragen die Inserat-Nummer.</p>
-  ${KATEGORIEN.map((k) => `<section class="kat-block" id="${k.key}">
+  <p class="hinweisbox">Alle Preise in Euro netto zzgl. 19&nbsp;% MwSt., Stand ${stand}. Angebot freibleibend, Zwischenverkauf, Irrtümer und Änderungen vorbehalten. Alle Angaben ohne Gewähr. Bitte nennen Sie bei Rückfragen die Inserat-Nummer, falls angegeben.</p>
+  ${kategorienMitWare.map((k) => `<section class="kat-block" id="${k.key}">
     <h2>${esc(k.lang)}</h2>
     <p style="color:var(--text-leise);margin:.6em 0 1.4em">${esc(k.text)}</p>
     <div class="karten">${PRODUKTE.filter((p) => p.kat === k.key).map(karte).join('\n')}</div>
@@ -323,10 +340,7 @@ const galerie = seite({
   datei: 'galerie.html',
   titel: 'Bilder unserer Maschinen – agroXX techniCCenter Ennigerloh',
   beschreibung: 'Bildergalerie des agroXX techniCCenter: Mulchgrubber, Scheibeneggen, Pflüge, Walzen, Tiefenlockerer und Kipper aus Ennigerloh.',
-  hero: `<section class="hero hero-klein">
-  <img src="${gross(GALERIEN[2].bilder[0])}" alt="">
-  <div class="wrap"><p class="kicker">Bilder</p><h1>Unsere Maschinen im Bild</h1><p>${GALERIEN.reduce((s, g) => s + g.bilder.length, 0)} Fotos aus unserem Bestand. Ein Klick vergrößert das Bild.</p></div>
-</section>`,
+  hero: heroKopf('Bilder', 'Unsere Maschinen im Bild', `${GALERIEN.reduce((s, x) => s + x.bilder.length, 0)} Fotos aus unserem Bestand. Ein Klick vergrößert das Bild.`, '8870254-65368730.jpg'),
   inhalt: `
 <section class="abschnitt"><div class="wrap">
   ${GALERIEN.map((g, i) => `<h2 class="galerie-titel" id="g${i + 1}">${esc(g.titel)} <span class="zaehler">· ${g.bilder.length} Bilder</span></h2>
@@ -340,20 +354,17 @@ const ueberUns = seite({
   datei: 'ueber-uns.html',
   titel: 'Über uns – agroXX techniCCenter Ennigerloh',
   beschreibung: 'Das agroXX techniCCenter von Thomas Schalkamp in Ennigerloh: Landtechnik für Bodenbearbeitung, persönliche Beratung, Ausstellung und Lieferung.',
-  hero: `<section class="hero hero-klein">
-  <img src="${gross(GALERIEN[6].bilder[1])}" alt="">
-  <div class="wrap"><p class="kicker">Über uns</p><h1>agroXX techniCCenter</h1><p>Landtechnik für die Bodenbearbeitung – persönlich, direkt und ab Lager.</p></div>
-</section>`,
+  hero: heroKopf('Über uns', 'agroXX techniCCenter', 'Landtechnik für die Bodenbearbeitung – persönlich, direkt und ab Lager.', '4995195-28536732.jpg'),
   inhalt: `
-<section class="abschnitt hell"><div class="wrap zweispaltig">
+<section class="abschnitt hell"><div class="wrap ${FIRMA.foto || entwurf ? 'zweispaltig' : 'rechtstext'}">
   <div>
     <h2>Wer wir sind</h2><span class="unterstrich"></span>
     <p style="margin-top:1em">Das agroXX techniCCenter ist die Anlaufstelle für Landwirte, die robuste Maschinen für die Bodenbearbeitung suchen. Unser Schwerpunkt sind Mulchgrubber, Kurzscheibeneggen, Cambridgewalzen, Großfederzinkeneggen und Tiefenlockerer.</p>
     <p>Ständig stehen 50 bis 80 verschiedene Maschinen ab Lager sofort für Sie bereit. Dazu kommen Pflüge, Kreiseleggen, Muldenkipper, Schlepperreifen und Verschleißteile.</p>
     <p>Inhaber und Ansprechpartner ist <strong>Thomas Schalkamp</strong>.</p>
-    <p>${platz('Hier kann Thomas in eigenen Worten die Firmengeschichte erzählen: Gründung, Werdegang, was ihm wichtig ist.')}</p>
+    ${FIRMA.ueberUns ? absaetze(FIRMA.ueberUns) : `<p>${platz('Hier kann Thomas in eigenen Worten die Firmengeschichte erzählen: Gründung, Werdegang, was ihm wichtig ist. (Im Formular unter „Firma & Kontakt“ → „Über uns“.)')}</p>`}
   </div>
-  <div class="platzhalter-box" role="img" aria-label="Platzhalter für ein Foto von Thomas Schalkamp">Platz für ein Foto<br>von Thomas Schalkamp<br>oder dem Betriebsgelände</div>
+  ${FIRMA.foto ? `<a href="${gross(FIRMA.foto)}" data-lightbox="ueber-uns" data-caption="${esc(FIRMA.name)}"><img class="rahmenbild" src="${klein(FIRMA.foto, 960)}" alt="${esc(FIRMA.name)}" loading="lazy"></a>` : entwurf ? '<div class="platzhalter-box" role="img" aria-label="Platzhalter für ein Foto">Platz für ein Foto<br>von Thomas Schalkamp<br>oder dem Betriebsgelände</div>' : ''}
 </div></section>
 
 <section class="abschnitt"><div class="wrap">
@@ -367,16 +378,16 @@ const ueberUns = seite({
 </div></section>
 
 <section class="abschnitt hell"><div class="wrap zweispaltig">
-  <div>
+  ${FIRMA.marken.length ? `<div>
     <h2>Marken im Programm</h2><span class="unterstrich"></span>
     <p style="margin-top:1em">Neben den agroXX-Maschinen führen wir Maschinen und Teile weiterer Hersteller.</p>
     <ul class="chips">${FIRMA.marken.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>
-  </div>
-  <div>
+  </div>` : ''}
+  ${FIRMA.sprachen.length ? `<div>
     <h2>Wir sprechen Ihre Sprache</h2><span class="unterstrich"></span>
     <p style="margin-top:1em">Auch Kunden aus dem Ausland sind bei uns richtig. Thomas Schalkamp spricht:</p>
     <ul class="chips">${FIRMA.sprachen.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>
-  </div>
+  </div>` : ''}
 </div></section>
 ${kontaktBand}`,
 });
@@ -386,10 +397,7 @@ const kontakt = seite({
   datei: 'kontakt.html',
   titel: 'Kontakt und Anfahrt – agroXX techniCCenter Ennigerloh',
   beschreibung: `Kontakt zum agroXX techniCCenter: ${adresseZeile}, Telefon ${FIRMA.telefon}, WhatsApp.`,
-  hero: `<section class="hero hero-klein">
-  <img src="${gross(GALERIEN[7].bilder[1])}" alt="">
-  <div class="wrap"><p class="kicker">Kontakt</p><h1>So erreichen Sie uns</h1><p>Am schnellsten per Telefon oder WhatsApp. Gern auch direkt bei uns vorbeikommen.</p></div>
-</section>`,
+  hero: heroKopf('Kontakt', 'So erreichen Sie uns', 'Am schnellsten per Telefon oder WhatsApp. Gern auch direkt bei uns vorbeikommen.', '8448821-59340483.jpg'),
   inhalt: `
 <section class="abschnitt"><div class="wrap zweispaltig">
   <div class="karte-weiss">
@@ -398,8 +406,8 @@ const kontakt = seite({
       <dt>Ansprechpartner</dt><dd>${esc(FIRMA.inhaber)}</dd>
       <dt>Anschrift</dt><dd>${esc(FIRMA.strasse)}<br>${esc(FIRMA.plz)} ${esc(FIRMA.ort)}</dd>
       <dt>Telefon / WhatsApp</dt><dd><a href="tel:${FIRMA.telefonLink}" style="font-size:1.35rem;font-weight:700">${esc(FIRMA.telefon)}</a></dd>
-      <dt>E-Mail</dt><dd>${emailZeile}</dd>
-      <dt>Öffnungszeiten</dt><dd>${platz('bitte ergänzen, z. B. Mo–Fr 8–17 Uhr, Sa nach Vereinbarung')}</dd>
+      ${zeile('E-Mail', FIRMA.email || entwurf ? emailLink : '')}
+      ${zeile('Öffnungszeiten', FIRMA.oeffnungszeiten || entwurf ? oeffnung : '')}
     </dl>
     <div class="btn-reihe"><a class="btn btn-orange" href="${FIRMA.whatsapp}">WhatsApp schreiben</a><a class="btn btn-blau" href="tel:${FIRMA.telefonLink}">Anrufen</a></div>
   </div>
@@ -414,6 +422,7 @@ const kontakt = seite({
 });
 
 // ---------- Impressum ----------
+const rechtsangaben = [FIRMA.rechtsform, FIRMA.handelsregister].filter(Boolean).map(esc).join('<br>');
 const impressum = seite({
   datei: 'impressum.html',
   titel: 'Impressum – agroXX techniCCenter',
@@ -421,14 +430,14 @@ const impressum = seite({
   inhalt: `
 <section class="abschnitt"><div class="wrap rechtstext">
   <h1>Impressum</h1>
-  <p class="hinweisbox">Entwurf: Die gelb markierten Angaben muss Thomas Schalkamp vor der Veröffentlichung ergänzen bzw. prüfen. Rechtstexte bitte vor dem Livegang rechtlich prüfen lassen.</p>
+  ${entwurf ? '<p class="hinweisbox">Entwurf: Die gelb markierten Angaben muss Thomas Schalkamp vor der Veröffentlichung ergänzen bzw. prüfen (Formular „Firma &amp; Kontakt“). Rechtstexte bitte vor dem Livegang rechtlich prüfen lassen.</p>' : ''}
   <h2>Angaben gemäß § 5 DDG</h2>
   <p><strong>${esc(FIRMA.name)}</strong><br>Inhaber: ${esc(FIRMA.inhaber)}<br>${esc(FIRMA.strasse)}<br>${esc(FIRMA.plz)} ${esc(FIRMA.ort)}<br>Deutschland</p>
-  <p>${platz('Rechtsform bitte prüfen / ergänzen, z. B. Einzelunternehmen')}<br>${platz('Falls vorhanden: Handelsregister, Registergericht und Registernummer')}</p>
+  ${rechtsangaben ? `<p>${rechtsangaben}</p>` : entwurf ? `<p>${platz('Rechtsform bitte prüfen / ergänzen, z. B. Einzelunternehmen')}<br>${platz('Falls vorhanden: Handelsregister, Registergericht und Registernummer')}</p>` : ''}
   <h2>Kontakt</h2>
-  <p>Telefon / WhatsApp: <a href="tel:${FIRMA.telefonLink}">${esc(FIRMA.telefon)}</a><br>E-Mail: ${emailZeile}</p>
-  <h2>Umsatzsteuer-ID</h2>
-  <p>Umsatzsteuer-Identifikationsnummer gemäß § 27a Umsatzsteuergesetz:<br>${platz('DE ___ bitte ergänzen')}</p>
+  <p>Telefon / WhatsApp: <a href="tel:${FIRMA.telefonLink}">${esc(FIRMA.telefon)}</a><br>E-Mail: ${emailLink}</p>
+  ${FIRMA.ustId || entwurf ? `<h2>Umsatzsteuer-ID</h2>
+  <p>Umsatzsteuer-Identifikationsnummer gemäß § 27a Umsatzsteuergesetz:<br>${FIRMA.ustId ? esc(FIRMA.ustId) : platz('DE ___ bitte ergänzen (falls vorhanden)')}</p>` : ''}
   <h2>Verantwortlich für den Inhalt (§ 18 Abs. 2 MStV)</h2>
   <p>${esc(FIRMA.inhaber)}, Anschrift wie oben.</p>
   <h2>Verbraucherstreitbeilegung</h2>
@@ -450,11 +459,11 @@ const datenschutz = seite({
   inhalt: `
 <section class="abschnitt"><div class="wrap rechtstext">
   <h1>Datenschutzerklärung</h1>
-  <p class="hinweisbox">Entwurf auf Basis einer reinen Informationsseite ohne Cookies, Tracking, Formulare und Karteneinbindung. Bitte vor dem Livegang prüfen lassen und die gelben Angaben ergänzen. Falls später Formulare, Karten, Videos oder Statistik hinzukommen, muss der Text angepasst werden.</p>
+  ${entwurf ? '<p class="hinweisbox">Entwurf auf Basis einer reinen Informationsseite ohne Cookies, Tracking, Formulare und Karteneinbindung. Bitte vor dem Livegang rechtlich prüfen lassen. Falls später Formulare, Karten, Videos oder Statistik hinzukommen, muss der Text angepasst werden.</p>' : ''}
   <h2>1. Verantwortlicher</h2>
-  <p>${esc(FIRMA.name)}, ${esc(FIRMA.inhaber)}<br>${esc(FIRMA.strasse)}, ${esc(FIRMA.plz)} ${esc(FIRMA.ort)}<br>Telefon: ${esc(FIRMA.telefon)}<br>E-Mail: ${emailZeile}</p>
+  <p>${esc(FIRMA.name)}, ${esc(FIRMA.inhaber)}<br>${esc(FIRMA.strasse)}, ${esc(FIRMA.plz)} ${esc(FIRMA.ort)}<br>Telefon: ${esc(FIRMA.telefon)}<br>E-Mail: ${emailLink}</p>
   <h2>2. Hosting und Server-Logfiles</h2>
-  <p>Beim Aufruf dieser Seiten verarbeitet der Server unseres Hosting-Anbieters (${platz('Anbieter eintragen')}) technisch notwendige Daten, insbesondere die IP-Adresse, Datum und Uhrzeit, die aufgerufene Seite und den verwendeten Browser. Die Verarbeitung dient dem sicheren und stabilen Betrieb der Seite (Art. 6 Abs. 1 lit. f DSGVO). Die Logdaten werden nach ${platz('Frist eintragen, z. B. 7 Tagen')} gelöscht.</p>
+  <p>Diese Website wird über den Dienst GitHub Pages der GitHub Inc. (88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA) bereitgestellt. Beim Aufruf verarbeitet GitHub technisch notwendige Daten, insbesondere die IP-Adresse, Datum und Uhrzeit, die aufgerufene Seite und den verwendeten Browser, um die Seite auszuliefern und abzusichern (Art. 6 Abs. 1 lit. f DSGVO). Dabei kann eine Übermittlung von Daten in die USA stattfinden. Näheres regelt die Datenschutzerklärung von GitHub. ${platz('Bitte rechtlich prüfen: Drittlandübermittlung und Vertrag mit dem Hosting-Anbieter.')}</p>
   <h2>3. Cookies und Tracking</h2>
   <p>Wir setzen keine Cookies zu Werbe- oder Analysezwecken ein und verwenden keine Tracking-Dienste. Es werden keine externen Schriften und keine eingebetteten Karten geladen.</p>
   <h2>4. Kontaktaufnahme per Telefon, E-Mail oder WhatsApp</h2>
@@ -465,10 +474,21 @@ const datenschutz = seite({
   <p>Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21). Wenden Sie sich dazu an die oben genannte Adresse.</p>
   <h2>7. Beschwerderecht</h2>
   <p>Sie können sich bei einer Datenschutz-Aufsichtsbehörde beschweren. Zuständig ist für uns die Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen, Kavalleriestraße 2–4, 40213 Düsseldorf.</p>
-  <p>Stand: Oktober 2026</p>
+  <p>Stand: ${stand}</p>
 </div></section>`,
 });
 
+// ---------- Schreiben ----------
+// alles außer dem Bilder-Zwischenspeicher (dist/bilder) wird neu geschrieben
+mkdirSync(ziel, { recursive: true });
+for (const n of readdirSync(ziel).filter((n) => n !== 'bilder')) rmSync(join(ziel, n), { recursive: true, force: true });
+cpSync(join(WURZEL, 'css'), join(ziel, 'css'), { recursive: true });
+cpSync(join(WURZEL, 'js'), join(ziel, 'js'), { recursive: true });
 const dateien = { 'index.html': index, 'grubber.html': grubber, 'produkte.html': produkte, 'galerie.html': galerie, 'ueber-uns.html': ueberUns, 'kontakt.html': kontakt, 'impressum.html': impressum, 'datenschutz.html': datenschutz };
 for (const [name, html] of Object.entries(dateien)) writeFileSync(join(ziel, name), html);
-console.log(`${Object.keys(dateien).length} Seiten geschrieben, ${PRODUKTE.length} Produkte, ${GALERIEN.reduce((s, g) => s + g.bilder.length, 0)} Galeriebilder.`);
+writeFileSync(join(ziel, 'robots.txt'), entwurf ? 'User-agent: *\nDisallow: /\n' : 'User-agent: *\nAllow: /\n');
+
+const b = await verarbeiteBilder(ziel);
+console.log(`Modus: ${entwurf ? 'Entwurf (für Suchmaschinen gesperrt)' : 'Live'} · ${Object.keys(dateien).length} Seiten · ${PRODUKTE.length} Maschinen · ${GALERIEN.reduce((s, x) => s + x.bilder.length, 0)} Galeriebilder · Bilder: ${b.neu} neu verkleinert, ${b.uebersprungen} unverändert`);
+for (const w of WARNUNGEN) console.warn('Hinweis: ' + w);
+if (b.fehler.length) { console.error('Bilder, die nicht verarbeitet werden konnten:\n' + b.fehler.join('\n')); process.exitCode = 1; }

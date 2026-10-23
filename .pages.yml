@@ -1,0 +1,179 @@
+# Einstellungen für Pages CMS (https://app.pagescms.org) – das Formular, in dem Thomas die Seite pflegt.
+# Jede Speicherung im Formular wird als Änderung im Repository abgelegt; danach baut GitHub die Seite
+# automatisch neu (siehe .github/workflows/seite.yml) und stellt sie in ca. 1–2 Minuten online.
+
+media:
+  - name: bilder
+    label: Fotos
+    input: bilder/original
+    output: /bilder/original
+    extensions: [jpg, jpeg, png, webp]
+    rename: random
+
+content:
+  - name: maschinen
+    label: Maschinen
+    type: collection
+    path: daten/maschinen
+    format: json
+    filename:
+      template: "{titel}-{year}{month}{day}-{hour}{minute}{second}.json"
+      field: false
+    view:
+      fields: [titel, kategorie, preis, status]
+      primary: titel
+      sort: [titel, preis, kategorie, status]
+      search: [titel, zusatz, kategorie]
+      default:
+        sort: titel
+        order: asc
+    fields:
+      - name: titel
+        label: Bezeichnung
+        type: string
+        required: true
+        description: "Name der Maschine, z. B. „TRIPLE-X 4.0-13“ oder „Kurzscheibenegge 4,0 m“."
+      - name: zusatz
+        label: Zusatz (Ausführung)
+        type: string
+        description: "Kurze Ergänzung unter dem Namen, z. B. „Mulchgrubber Premium mit Dachringwalze“."
+      - name: kategorie
+        label: Kategorie
+        type: select
+        required: true
+        description: "Bestimmt, in welchem Abschnitt der Seite die Maschine erscheint."
+        options:
+          values:
+            - Grubber
+            - Kurzscheibeneggen
+            - Tiefenlockerer
+            - Pflüge
+            - Walzen & Packer
+            - Kreiseleggen
+            - Muldenkipper
+            - Schlepperreifen
+            - Verschleißteile
+      - name: status
+        label: Status
+        type: select
+        required: true
+        default: Verfügbar
+        description: "„Reserviert“ zeigt eine Marke an der Maschine. „Verkauft“ nimmt die Maschine von der Seite (die Daten bleiben erhalten)."
+        options:
+          values:
+            - Verfügbar
+            - Reserviert
+            - Verkauft
+      - name: preis
+        label: Preis netto in Euro
+        type: number
+        options:
+          min: 0
+        description: "Ohne MwSt. und ohne Punkt/Komma, z. B. 9900. Leer lassen = „Preis auf Anfrage“."
+      - name: arbeitsbreite
+        label: Arbeitsbreite
+        type: string
+        description: "z. B. „4,0 m“ (wird in der Grubber-Preistabelle angezeigt)."
+      - name: eckdaten
+        label: Eckdaten
+        type: string
+        list: true
+        description: "Eine Zeile pro Eigenschaft, z. B. „Dachringwalze Ø 600 mm“. Erscheinen als Stichpunkte auf der Karte."
+      - name: bilder
+        label: Fotos
+        type: image
+        options:
+          media: bilder
+          multiple: true
+          unique: true
+        description: "Das erste Foto ist das Titelbild. Mit dem Ziehen-Symbol lässt sich die Reihenfolge ändern. Mit „Alle Fotos hochladen“ können mehrere auf einmal gewählt werden."
+      - name: inserat
+        label: Inserat-Nr. (traktorpool)
+        type: string
+        description: "Optional. Wird auf der Karte und in der WhatsApp-Anfrage genannt."
+      - name: startseite
+        label: Auf der Startseite zeigen
+        type: boolean
+        description: "Ein Haken = die Maschine erscheint unter „Aktuell ab Lager“ auf der Startseite (am besten höchstens 6)."
+
+  - name: firma
+    label: Firma & Kontakt
+    type: file
+    path: daten/firma.json
+    format: json
+    fields:
+      - name: modus
+        label: Seite ist …
+        type: select
+        required: true
+        default: Entwurf
+        description: "„Entwurf“: gelbe Hinweise sichtbar, für Google gesperrt. „Live“: öffentlich, Platzhalter und Entwurfsbalken verschwinden. Auf „Live“ stellen erst, wenn die E-Mail eingetragen und die Rechtstexte geprüft sind."
+        options:
+          values:
+            - Entwurf
+            - Live
+      - name: telefon
+        label: Telefon / WhatsApp
+        type: string
+        required: true
+        description: "z. B. „+49 170 7324661“. Wird auch für den WhatsApp-Knopf verwendet."
+      - name: email
+        label: E-Mail-Adresse
+        type: string
+        description: "Pflicht im Impressum, bevor die Seite auf „Live“ gestellt wird."
+      - name: oeffnungszeiten
+        label: Öffnungszeiten
+        type: text
+        description: "Eine Zeile pro Eintrag, z. B. „Mo–Fr 8–17 Uhr“. Leer lassen = wird nicht angezeigt."
+      - name: rechtsform
+        label: Rechtsform
+        type: string
+        description: "z. B. „Einzelunternehmen“ (für das Impressum). Leer lassen, wenn nicht nötig."
+      - name: handelsregister
+        label: Handelsregister
+        type: string
+        description: "Nur falls eingetragen: Registergericht und Nummer. Sonst leer lassen."
+      - name: ust_id
+        label: Umsatzsteuer-ID
+        type: string
+        description: "z. B. „DE123456789“. Leer lassen, falls keine vorhanden."
+      - name: ueber_uns
+        label: Text „Über uns“
+        type: text
+        description: "Eigene Worte zur Firmengeschichte. Eine Leerzeile erzeugt einen neuen Absatz."
+      - name: foto
+        label: Foto für „Über uns“
+        type: image
+        options:
+          media: bilder
+        description: "Foto von Thomas oder vom Betriebsgelände."
+      - name: marken
+        label: Marken im Programm
+        type: string
+        list: true
+      - name: sprachen
+        label: Gesprochene Sprachen
+        type: string
+        list: true
+
+  - name: grubber
+    label: Grubber-Seite
+    type: file
+    path: daten/grubber.json
+    format: json
+    fields:
+      - name: sonderausruestung
+        label: Sonderausrüstung gegen Mehrpreis
+        type: object
+        list: true
+        description: "Erscheint als Preisliste auf der Grubber-Seite."
+        fields:
+          - name: bezeichnung
+            label: Bezeichnung
+            type: string
+            required: true
+          - name: preis
+            label: Preis netto in Euro
+            type: number
+            options:
+              min: 0

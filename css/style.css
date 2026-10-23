@@ -141,6 +141,10 @@ p { margin: 0 0 1em; }
 .preis { font-family: var(--serif); font-size: 1.6rem; font-weight: 700; color: var(--blau-dunkel); line-height: 1.1; }
 .preis small { display: block; font-family: var(--sans); font-size: .82rem; font-weight: 400; color: var(--text-leise); margin-top: 3px; }
 .karte .aktionen { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.karte { position: relative; }
+.karte .status-marke { position: absolute; top: 12px; left: 12px; z-index: 2; background: var(--orange-dunkel, #c4621d); color: #fff; font-weight: 700; font-size: .85rem; letter-spacing: .04em; text-transform: uppercase; padding: 4px 10px; border-radius: 3px; }
+.karte .kein-bild { display: flex; align-items: center; justify-content: center; color: var(--text-leise); font-size: 1rem; }
+.preis.preis-anfrage { font-size: 1.25rem; color: var(--text-leise); }
 
 /* Produktseite */
 .kat-nav { background: var(--papier); border-bottom: 1px solid var(--linie); position: sticky; top: 80px; z-index: 40; }

@@ -1,40 +1,45 @@
-# agroXX techniCCenter – Website-Entwurf
+# agroXX techniCCenter – Website
 
-Reine HTML/CSS-Seite ohne Cookies, Tracking oder externe Schriften. `index.html` im Browser öffnen genügt.
+Statische Seite ohne Cookies, Tracking oder externe Schriften. Die Inhalte stehen als JSON-Dateien im Ordner `daten/` und werden von Thomas über ein Formular ([Pages CMS](https://app.pagescms.org), siehe **[PFLEGE.md](PFLEGE.md)**) gepflegt. Bei jeder Änderung baut GitHub die Seite automatisch neu und veröffentlicht sie.
 
-## Seiten
-`index.html` Start · `grubber.html` Mulchgrubber TRIPLE-X · `produkte.html` alle 36 Maschinen mit Preisen · `galerie.html` 137 Bilder · `ueber-uns.html` · `kontakt.html` · `impressum.html` · `datenschutz.html`
+Live: https://finnru007.github.io/agroxx-website/
 
-## Inhalte ändern
-Texte, Preise und Bildlisten stehen in `_quelle/daten.mjs` (Firma, Produkte, Galerien) und `_quelle/build.mjs` (Seitentexte).
-Danach neu erzeugen (Node.js nötig):
+## So hängt alles zusammen
 
-    node _quelle/build.mjs
+| Ordner / Datei | Inhalt |
+|---|---|
+| `daten/maschinen/*.json` | Eine Datei pro Maschine (Bezeichnung, Kategorie, Status, Preis, Eckdaten, Fotos, Startseite-Haken) |
+| `daten/firma.json` | Telefon, E-Mail, Öffnungszeiten, Impressum-Angaben, Über-uns-Text und -Foto, Schalter **Entwurf/Live** |
+| `daten/grubber.json` | Preisliste Sonderausrüstung |
+| `bilder/original/` | Alle Fotos in Originalgröße (Upload über das Formular) |
+| `.pages.yml` | Aufbau des Formulars in Pages CMS |
+| `.github/workflows/seite.yml` | Baut bei jedem Commit auf `main` die Seite und veröffentlicht sie auf GitHub Pages |
+| `_quelle/` | Der Seitengenerator: `daten.mjs` (liest die JSON-Dateien), `build.mjs` (Seitentexte und -layout), `bilder.mjs` (verkleinert die Fotos), `serve.mjs` (Vorschau) |
+| `css/`, `js/` | Gestaltung und Lightbox/Menü |
+| `dist/` | Fertige Seite (wird erzeugt, nicht im Repository) |
 
-Vorschau im Browser unter http://localhost:8123 :
+Ablauf: Speichern im Formular → Commit auf `main` → GitHub Action: `npm ci`, `npm run build` (Seiten erzeugen, Fotos auf 640 px und 1600 px verkleinern, GPS-/EXIF-Daten entfernen) → Veröffentlichung. Dauer ca. 1–2 Minuten. Schlägt der Bau fehl (z. B. Live ohne E-Mail), bleibt die alte Seite online, und GitHub schickt dem Repository-Besitzer eine E-Mail.
 
-    node _quelle/serve.mjs
+## Lokal arbeiten (Node.js ≥ 22)
 
-Farben und Schrift: oben in `css/style.css` (`:root`).
+    npm ci
+    npm run build        # erzeugt dist/
+    npm start            # Vorschau auf http://localhost:8123
 
-## Veröffentlichen (GitHub Pages)
-Entwurf online: https://finnru007.github.io/agroxx-website/ (Repo: https://github.com/FinnRu007/agroxx-website, öffentlich).
-Die fertigen Seiten liegen im Hauptordner. Nach jeder Änderung neu erzeugen und hochladen:
+Texte und Aufbau der Seiten: `_quelle/build.mjs`. Farben und Schrift: oben in `css/style.css` (`:root`). Die Kategorien (Reihenfolge, Texte) stehen in `_quelle/daten.mjs`; die Namen müssen zur Auswahlliste „Kategorie“ in `.pages.yml` passen.
 
-    node _quelle/build.mjs
-    git add -A
-    git commit -m "Preise aktualisiert"
-    git push
-
-Nach etwa einer Minute ist die Änderung online.
-
-Neue Maschine mit Bildern: Bildpfade in `_quelle/daten.mjs` eintragen, dann `node _quelle/bilder-laden.mjs` (lädt die Bilder von traktorpool in `bilder/`) und neu erzeugen.
+## Modus Entwurf / Live
+In `daten/firma.json` (im Formular: „Firma & Kontakt → Seite ist …“):
+- **Entwurf** (Standard): `noindex`, `robots.txt` sperrt alles, gelber Entwurfsbalken, gelb markierte Platzhalter.
+- **Live**: Platzhalter, Balken und Sperren entfallen, `robots.txt` erlaubt alles. Der Bau bricht ab, wenn die E-Mail-Adresse fehlt.
 
 ## Vor dem Livegang erledigen
-- [x] Bilder lokal gespeichert (`bilder/k` Vorschau, `bilder/g` groß).
-- [ ] Gelb markierte Platzhalter ausfüllen (E-Mail, Öffnungszeiten, USt-IdNr., Rechtsform, Firmengeschichte, Foto von Thomas).
-- [ ] Impressum und Datenschutz rechtlich prüfen lassen.
-- [ ] Preise prüfen (Stand 23.10.2026, Quelle: traktorpool.de/agroxx) – oder ganz entfernen, wenn sie nicht dauerhaft gepflegt werden.
-- [ ] Entwurfsschutz aufheben: `<meta name="robots" content="noindex">` in `_quelle/build.mjs` entfernen, `robots.txt` löschen, gelben „Entwurf“-Balken entfernen.
+- [ ] E-Mail, Öffnungszeiten, USt-IdNr., Rechtsform, Firmengeschichte und Foto im Formular ausfüllen.
+- [ ] Impressum und Datenschutz rechtlich prüfen lassen (Hosting über GitHub Pages / USA ist im Datenschutztext erwähnt).
+- [ ] Preise prüfen (Stand der Übernahme: 23.10.2026, Quelle: traktorpool.de/agroxx).
 - [ ] Eigene Domain? Sonst bleibt es bei der github.io-Adresse.
-- [ ] Pflege für Thomas klären (Formular-Oberfläche, nur traktorpool-Link oder manuell).
+- [ ] **Seite ist … auf „Live“ stellen.**
+
+## Hinweise
+- traktorpool.de blockiert automatische Abrufe, deshalb gibt es keinen automatischen Abgleich mit den Inseraten. Bestand und Preise werden im Formular gepflegt.
+- Fotos bleiben in Originalgröße im Repository. GitHub empfiehlt Repositories unter 1 GB; bei durchschnittlich 3 MB pro Foto reicht das für einige hundert Bilder.

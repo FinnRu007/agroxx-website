@@ -1,0 +1,13 @@
+{
+  "name": "agroxx-website",
+  "private": true,
+  "type": "module",
+  "description": "Website agroXX techniCCenter: Seiten werden aus daten/ erzeugt",
+  "scripts": {
+    "build": "node _quelle/build.mjs",
+    "start": "node _quelle/serve.mjs"
+  },
+  "dependencies": {
+    "sharp": "^0.35.5"
+  }
+}
